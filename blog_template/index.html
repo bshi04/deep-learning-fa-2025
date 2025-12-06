@@ -183,8 +183,8 @@
 
 </style>
 
-	  <title>The Platonic Representation Hypothesis</title>
-      <meta property="og:title" content="The Platonic Representation Hypothesis" />
+	  <title>SplitPINNFusion</title>
+      <meta property="og:title" content="SplitPINNFusion" />
 			<meta charset="UTF-8">
   </head>
 
@@ -197,15 +197,15 @@
 						<table class="header" align=left>
 								<tr>
 									<td colspan=4>
-										<span style="font-size: 32px; font-family: 'Courier New', Courier, monospace; /* Adds fallbacks */">A Grand Unified Theory of Deep Learning</span>
+										<span style="font-size: 32px; font-family: 'Courier New', Courier, monospace; /* Adds fallbacks */">SplitPINNFusion</span>
 									</td>
 								</tr>
 								<tr>
 										<td align=left>
-												<span style="font-size:17px"><a href="your_website">Your name</a></span>
+												<span style="font-size:17px"><a href="your_website">Osahon Odiase</a></span>
 										</td>
 										<td align=left>
-												<span style="font-size:17px"><a href="your_partner's_website">Your partner's name</a></span>
+												<span style="font-size:17px"><a href="your_partner's_website">Brian Shi</a></span>
 										</td>
 								<tr>
 									<td colspan=4 align=left><span style="font-size:18px">Final project for 6.7960, MIT</span></td>
@@ -222,17 +222,12 @@
           <div style="position:fixed; max-width:inherit; top:max(20%,120px)">
               <b style="font-size:16px">Outline</b><br><br>
               <a href="#intro">Introduction</a><br><br>
-              <a href="#does_x_do_y">Does X do Y?</a><br><br>
-              <a href="#implications_and_limitations">Implications and limitations</a><br><br>
+              <a href="#background_and_related_work">Background and Related Work</a><br><br>
+              <a href="#methodology">Methodology</a><br><br>
+              <a href="#experiments">Experiments</a><br><br>
+              <a href="#discussion">Discussion</a><br><br>
           </div>
 				</div>
-		    <div class="main-content-block">
-            <!--You can embed an image like this:-->
-            <img src="./images/your_image_here.png" width=512px/>
-		    </div>
-		    <div class="margin-right-block">
-						Caption for the image.
-		    </div>
 		</div>
 
     <div class="content-margin-container" id="intro">
@@ -240,72 +235,557 @@
 				</div>
 		    <div class="main-content-block">
 						<h1>Introduction</h1>
-            Motivate your project. What question are you asking. Why is it unanswered so far? What gap in the literature or practice are you filling?
-            Why is it important?
+                        Physics-Informed Neural Networks (PINNs) integrate physical laws, typically expressed as differential equations, directly into the loss function of neural networks <a href="#orig_pinn">[1]</a>. This approach enables models to learn from both observational data and underlying physical principles. Since pure PINNs require no initial data for training, they are particularly useful in approximating partial differential equations (PDEs) that may be challenging for traditional numerical methods when there is sparse or no data. <br><br>
+                        This project experiments with a new PINN architecture to solve the 2-D convection-diffusion equation, which governs how quantities like concentration or temperature evolve in a medium through diffusion and convection. Diffusion captures random spreading driven by molecular motion and convection (advection) represents directional transport by bulk fluid flow. Existing PINN approaches apply a single unified architecture to all terms in the convection-diffusion equation <a href="#pinn_ex">[2]</a>. Our work introduces SplitPINNFusion, a dual-branch architecture that optimizes the diffusion and convection components independently then re-merges them together.
+		    </div>
+		</div>
+
+		<div class="content-margin-container" id="background_and_related_work">
+				<div class="margin-left-block">
+				</div>
+		    <div class="main-content-block">
+					<h1>Background and Related Work</h1>
+The PDE that defines the evolution of the function
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi>u</mi>
+</math>
+under diffusion and convection in steady-state (no time-dependent term) is
+<br>
+<center>
+  <math xmlns="http://www.w3.org/1998/Math/MathML">
+    <mrow>
+      <mo>-</mo>
+      <mi>&#x03B5;</mi>
+      <msup>
+        <mo>&#x2207;</mo>
+        <mn>2</mn>
+      </msup>
+      <mi>u</mi>
+      <mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo>
+      <mo>+</mo>
+      <mi mathvariant="bold">U</mi>
+      <mo>&#x22C5;</mo>
+      <mo>&#x2207;</mo>
+      <mi>u</mi>
+      <mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo>
+      <mo>=</mo>
+      <mi>f</mi>
+      <mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo>
+    </mrow>
+  </math>
+</center>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi mathvariant="bold">U</mi>
+</math>
+represents the advection velocity coefficient and prescribes the relative importance of transport in the governing equation;
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi>&#x03B5;</mi>
+</math>
+describes the relative importance of diffusion. The PDE's stiffness is determined by the Peclet number,
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mrow>
+    <mi mathvariant="bold">Pe</mi>
+    <mo>=</mo>
+    <mfrac>
+      <mrow>
+        <mi mathvariant="bold">U</mi>
+        <mi mathvariant="bold">L</mi>
+      </mrow>
+      <mi>ε</mi>
+    </mfrac>
+  </mrow>
+</math>
+where
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi mathvariant="bold">L</mi>
+</math>
+is the characteristic length scale of the domain.<br><br>
+
+To address numerical stiffness for high Peclet numbers, researchers have developed numerical formulations to decouple and re-couple the convective and diffusion terms during computation <a href="#numerical_decoupling_ex">[3]</a>. The convective term introduces high directional gradients, resulting in numerical instabilities, which can make the underlying PDE non-smooth. In modern PINN-architectures, the loss function is typically computed from the full underlying PDE without regard to the underlying characteristics that may drive instability.<br><br>
+A further challenge that arises in standard PINNs is the spectral bias of neural networks <a href="#spectral_bias">[4]</a>. Standard PINNs may be able to pick up on smooth functions (diffusion) more effectively than non-smooth functions (convection). This inherent preference for low-frequency features can lead to poor approximations of the convective term, especially at high Peclet numbers.<br><br>
+Drawing from the numerical formulation, we consider a series of decoupled architectures to have more fine-grained control over each of the parameters of the PDE. We hypothesize that decoupling the architectures can improve the expressiveness of the convective term for high Peclet number PDEs. We examine whether we can optimize for two different scales, thereby improving traditional PINN accuracy and stability.
+		    </div>
+		</div>
+
+		<div class="content-margin-container" id="methodology">
+				<div class="margin-left-block">
+				</div>
+		    <div class="main-content-block">
+						<h1>Methodology</h1>
+                        <i>Problem Formulation</i><br><br>
+
+For our PINN tests, the model has access only to the governing PDE and boundary conditions, but no supervised training data. This is particularly relevant in applications where observational measurements are limited or costly to obtain. We test our PINNs on the following PDE: we prescribe 2D convection–diffusion on a square domain of length 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>1</mn></math>
+consisting of 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mn>400</mn><mo>&#x00D7;</mo><mn>400</mn>
+</math>
+points.
+
+We have the source function 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mrow>
+    <mi>f</mi><mo>(</mo><mi>y</mi><mo>)</mo>
+    <mo>=</mo>
+    <msub><mi>s</mi><mn>0</mn></msub>
+    <mo>⁢</mo>
+    <msup>
+      <mi>e</mi>
+      <mrow><mo>-</mo><mi>&#x03B2;</mi><mi>y</mi></mrow>
+    </msup>
+  </mrow>
+</math>,
+where 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <msub><mi>s</mi><mn>0</mn></msub><mo>=</mo><mn>0.1</mn>
+</math>
+and 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi>&#x03B2;</mi><mo>=</mo><mn>1.0</mn>
+</math>.
+
+When we are not performing hyperparameter sweeps, we use constant coefficients 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi>U</mi><mo>=</mo><mn>0.1</mn>
+</math>,
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi>&#x03B5;</mi><mo>=</mo><msup><mn>10</mn><mrow><mo>-</mo><mn>2</mn></mrow></msup>
+</math>.
+
+The left and right walls enforce a Dirichlet boundary condition 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi>u</mi><mo>=</mo><mn>0</mn>
+</math>,
+and a homogeneous Neumann (zero-flux) boundary condition 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mfrac>
+    <mrow><mo>&#x2202;</mo><mi>u</mi></mrow>
+    <mrow><mo>&#x2202;</mo><mi>n</mi></mrow>
+  </mfrac>
+  <mo>=</mo><mn>0</mn>
+</math>
+is applied to the top and bottom walls.<br><br>
+                        <i>Ground Truth Data Generation</i><br><br>
+To generate reference data, we manually create our own finite-difference (FD) solver in Python. A standard second-order central-difference scheme is used to approximate the diffusion operator with high fidelity,
+
+<center>
+  <math xmlns="http://www.w3.org/1998/Math/MathML">
+    <mrow>
+      <mfrac>
+        <mrow>
+          <msup>
+            <mi>d</mi>
+            <mn>2</mn>
+          </msup>
+          <mi>u</mi>
+        </mrow>
+        <mrow>
+          <mi>d</mi><msup><mi>x</mi><mn>2</mn></msup>
+        </mrow>
+      </mfrac>
+      <mo>&#x2248;</mo>
+      <mfrac>
+        <mrow>
+          <msub><mi>u</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>j</mi></mrow></msub>
+          <mo>-</mo>
+          <mn>2</mn><msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi></mrow></msub>
+          <mo>+</mo>
+          <msub><mi>u</mi><mrow><mi>i</mi><mo>-</mo><mn>1</mn><mo>,</mo><mi>j</mi></mrow></msub>
+        </mrow>
+        <msup><mi>&#x0394;x</mi><mn>2</mn></msup>
+      </mfrac>
+      <mo>,</mo>
+      <mspace width="2em" />
+      <mfrac>
+        <mrow>
+          <msup>
+            <mi>d</mi>
+            <mn>2</mn>
+          </msup>
+          <mi>u</mi>
+        </mrow>
+        <mrow>
+          <mi>d</mi><msup><mi>y</mi><mn>2</mn></msup>
+        </mrow>
+      </mfrac>
+      <mo>&#x2248;</mo>
+      <mfrac>
+        <mrow>
+          <msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi><mo>+</mo><mn>1</mn></mrow></msub>
+          <mo>-</mo>
+          <mn>2</mn><msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi></mrow></msub>
+          <mo>+</mo>
+          <msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi><mo>-</mo><mn>1</mn></mrow></msub>
+        </mrow>
+        <msup><mi>&#x0394;y</mi><mn>2</mn></msup>
+      </mfrac>
+      <mo>.</mo>
+    </mrow>
+  </math>
+</center>
+
+where 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x0394;x</mi></math>
+and
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x0394;y</mi></math>
+are the spatial coordinates. The convection term is discretized using a first-order upwind scheme,
+
+<center>
+  <math xmlns="http://www.w3.org/1998/Math/MathML">
+    <mrow>
+      <mfrac>
+        <mrow><mi>d</mi><mi>u</mi></mrow>
+        <mrow><mi>d</mi><mi>x</mi></mrow>
+      </mfrac>
+      <mo>&#x2248;</mo>
+      <mfrac>
+        <mrow>
+          <msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi></mrow></msub>
+          <mo>-</mo>
+          <msub><mi>u</mi><mrow><mi>i</mi><mo>-</mo><mn>1</mn><mo>,</mo><mi>j</mi></mrow></msub>
+        </mrow>
+        <mi>&#x0394;x</mi>
+      </mfrac>
+      <mo>,</mo>
+      <mspace width="2em" />
+      <mfrac>
+        <mrow><mi>d</mi><mi>u</mi></mrow>
+        <mrow><mi>d</mi><mi>y</mi></mrow>
+      </mfrac>
+      <mo>&#x2248;</mo>
+      <mfrac>
+        <mrow>
+          <msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi></mrow></msub>
+          <mo>-</mo>
+          <msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi><mo>-</mo><mn>1</mn></mrow></msub>
+        </mrow>
+        <mi>&#x0394;y</mi>
+      </mfrac>
+      <mo>.</mo>
+    </mrow>
+  </math>
+</center>
+
+A mesh sensitivity study is conducted a priori to verify that the chosen finite-difference mesh yields a resolution-independent reference solution.  
+The 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <msub><mi>L</mi><mn>&#x221E;</mn></msub>
+</math>
+and 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <msub><mi>L</mi><mn>2</mn></msub>
+</math>
+norms of the differences between meshes with 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mrow><mn>2</mn><mo>&#x00D7;</mo></mrow>
+</math>
+spatial refinements were on the order of 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mn>10</mn><mrow><mo>-</mo><mn>4</mn></mrow></msup></math>
+and 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mn>10</mn><mrow><mo>-</mo><mn>5</mn></mrow></msup></math>
+respectively, indicating that the numerical solution is sufficiently converged.
+
+For our PINNs, we sample collocation points over the square domain. The governing equations are solved at each point and compared to the numerically computed fine-mesh solution to determine the error.<br><br>
+                        <i>Convergence Criteria</i><br><br>
+In our experiments, our main criteria for quantitatively understanding the performance of the models was examining the number of epochs for convergence. We define the convergence of the model as when the mean squared error of the predicted 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>u</mi></math>
+values compared to the ground truth 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>u</mi></math>
+values is less than 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <msup><mn>10</mn><mrow><mo>-</mo><mn>4</mn></mrow></msup>
+</math>.
+For our particular PDE solution, this corresponds to a relative 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <msub><mi>L</mi><mn>2</mn></msub>
+</math>
+error of approximately 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mn>3.4</mn><mo>%</mo>
+</math>
+on the 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mn>400</mn><mo>&#x00D7;</mo><mn>400</mn>
+</math>
+grid.<br><br>
+                        <i>Architectures</i><br><br>
+                        <img src="./images/arch-diagram.png" width=600px/>
+                        <ol>
+                            <li><b>Vanilla PINN:</b> 
+As a baseline, we implement a Vanilla PINN as a standard fully-connected feed-forward network (MLP) consisting of two spatial input coordinates, 6 hidden layers, and a hidden dimension of 64. The PINN uses a 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
+activation function and outputs a single value: the predicted 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi>u</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo>
+</math>.
+The PINN is trained by minimizing a loss function that contains a PDE residual loss and two boundary-condition losses (one for Dirichlet and one for Neumann). Throughout the training process, we sample 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10000</mn></math>
+interior points and 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>1000</mn></math>
+boundary points per epoch, compute the total loss, and update the network’s weights. In the above diagram, architecture A describes the Vanilla PINN.<br><br></li>
+                            <li><b>SplitPINNFusion:</b> 
+Our new architecture is an extension of the Vanilla PINN that dedicates separate neural network branches to handle convection and diffusion. In the above diagram, architecture B describes SplitPINNFusion. The diffusion branch is an MLP with 6 hidden layers, has a hidden dimension of 45, and uses a 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
+activation function. The convection branch is an MLP with 6 hidden layers, has a hidden dimension of 45, and uses a 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>SiLU</mi></math>
+activation function.<br><br>
+
+The motivation of choosing 45 as the hidden dimension is to have the same depth and approximately the same number of trainable parameters 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mo>(</mo><mo>&#x223C;</mo><mn>21</mn><mi>k</mi><mo>)</mo>
+</math>
+across all architectures, ensuring that model capacity does not factor into any observed performance differences. We choose to use 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
+for the diffusion branch since this term is smooth and differentiable everywhere, improving stability and computation accuracy. For the convection branch, we use 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>SiLU</mi></math>
+to improve the expressiveness needed for the convective term while maintaining differentiability.<br><br>
+
+Then, the 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <msub><mi>u</mi><mi>diff</mi></msub>
+</math>
+and 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <msub><mi>u</mi><mi>conv</mi></msub>
+</math>
+branches are combined through a small gating network that produces a scalar value (between 0 and 1 using a sigmoid activation). The final solution 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>u</mi></math>
+is a weighted sum,
+<center>
+  <math xmlns="http://www.w3.org/1998/Math/MathML">
+    <mrow>
+      <mi>u</mi>
+      <mo>=</mo>
+      <mo>(</mo><mn>1</mn><mo>-</mo><mi>g</mi><mo>)</mo>
+      <mo>&#x00D7;</mo>
+      <msub><mi>u</mi><mi>diff</mi></msub>
+      <mo>+</mo>
+      <mi>g</mi>
+      <mo>&#x00D7;</mo>
+      <msub><mi>u</mi><mi>conv</mi></msub>
+    </mrow>
+  </math>
+</center>
+This gating mechanism allows the network to adaptively emphasize either the convective or diffusive behavior depending on the region of the domain, thereby fusing the contributions of the two specialized branches.<br><br>
+                            </li>
+                            <li><b>AddPINN:</b>
+
+In addition to SplitPINNFusion, we also tested different combination mechanisms of the convection and diffusion components. AddPINN functions identically to SplitPINNFusion; however, the gating network is replaced with a simple addition to compute
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi>u</mi><mo>=</mo>
+  <msub><mi>u</mi><mi>conv</mi></msub>
+  <mo>+</mo>
+  <msub><mi>u</mi><mi>diff</mi></msub>
+</math>.
+This additive approach assumes that the total solution can be linearly decomposed into a convective and a diffusive part, with each sub-network learning one of these components.<br><br></li>
+                            <li><b>MixedPINN:</b>
+
+The last combination mechanism we tested was MixedPINN, where instead of directly outputting the solution, each branch returns a series of feature vectors of size 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10</mn></math>.
+These feature vectors are then concatenated, and a single additional linear layer takes the combined feature vector as input and maps it down to the single output 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>u</mi></math>.
+We wanted to test whether combining the components at a feature level could allow for more complex interactions between the convective and diffusive components.</li>
+                        </ol>
 		    </div>
 		    <div class="margin-right-block">
-						Margin note that clarifies some detail #main-content-block for intro section.
 		    </div>
 		</div>
 
-		<div class="content-margin-container" id="does_x_do_y">
+        <div class="content-margin-container" id="experiments">
 				<div class="margin-left-block">
 				</div>
 		    <div class="main-content-block">
-					<h1>Does X do Y?</h1>
-				  It is well known that Y does Y. And this has raised the question does X do Y? Because if Y does Y then it stands to reason that X does Y.
-          But we cannot answer this until we realize the Z implies Y and X can be linked to Z.<br><br>
+						<h1>Experiments</h1>
 
-          Now let's write some math!<br>
-          <center>
-            <math xmlns="http://www.w3.org/1998/Math/MathML">
-              <mrow>
-                <mrow>
-                  <mo>&#x2202;</mo>
-                  <mi>y</mi>
-                </mrow>
-                <mo>/</mo>
-                <mrow>
-                  <mo>&#x2202;</mo>
-                  <mi>x</mi>
-                </mrow>
-              </mrow>
-              <mo>=</mo>
-              <mi>x</mi>
-            </math>
-          </center>
-          <br>
-          It's probably best to ask an LLM to help do the web
-          formatting for math. You can tell it "convert this latex equation into MathML: $$\frac{\partial dy}{\partial dx} = x$$"
-          But it took me a few tries. So, if you get frustrated, you can embed an image of the equation, or use other packages for
-          rendering equations on webpages.
-		    </div>
-		    <div class="margin-right-block" style="transform: translate(0%, -100%);"> <!-- you can move the margin notes up and down with translate -->
-          Interestingly, Plato also asked if X does Y, in <a href="#ref_1">[1]</a>.
-		    </div>
-		</div>
+                        <i>Activation Function</i><br><br>
+The largest advantage of a split mechanism was having more fine-grained control over the training of each of the network’s components. Thus, we examined the behavior of the SplitPINNFusion network compared to the Vanilla PINN in the case where both branches used the 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
+activation function, and in the case where the diffusion branch uses 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
+and the convection branch uses 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>SiLU</mi></math>.
+We initially hypothesized that since the convection term drives stiffness, a SiLU may perform better than a 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
+because SiLU is non-saturating and allows for directional growth, whereas 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
+is smooth and symmetric.<br><br>
+To test our hypothesis, we run the Vanilla architecture and each SplitPINNFusion variation for 10,000 epochs and evaluate test error.<br><br>
+                        <img src="./images/arch.png" width=600px/>
+Both SplitPINNFusion configurations demonstrate faster convergence than the baseline Vanilla PINN, indicating that the architectural decoupling improves the PDE learning process independent of the choice of activation. The SplitPINNFusion SiLU variation converges in 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>5368</mn></math>
+epochs, while the 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
+architecture converges in 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>6627</mn></math>
+epochs, and the Vanilla model converges in 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>7717</mn></math>
+epochs. Both split architectures converge faster than the Vanilla model, and the SplitPINNFusion SiLU variation achieves 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mo>&#x223C;</mo><mn>19</mn><mo>%</mo>
+</math>
+faster convergence rate than the baseline 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
+architecture.<br><br>
+                        <i>Fusing Mechanism</i><br><br>
+                        To assess the influence of the recombination strategy on solution quality, we evaluate three fusion mechanisms for integrating the outputs of the convection and diffusion branches: SplitPINNFusion, AddPINN, MixedPINN. The relative contribution of convection and diffusion can differ substantially across the domain, suggesting that a flexible fusion strategy may better capture local variations in PDE behavior. Our hypothesis is that a learned gating mechanism will provide superior performance, as it can modulate the branch contributions in a spatially adaptive manner, whereas fixed additive fusion may be too restrictive. We believe that feature-level mixing may complicate optimization without offering targeted control over the physical PDE operators. We run each architecture below and summarize convergence history in Figure X.<br><br>
+                        <img src="./images/fusing.png" width=600px/>
+We observed that AddPINN converged in 9695 epochs, SplitPINNFusion converged in 5368 epochs, and MixedPINN converged in 6040 epochs. Our findings corroborate our initial hypothesis: the AddPINN and MixedPINN mechanisms take longer to fully capture the coupling between the convective and diffusion term needed to satisfy the governing equation.<br><br>
+                        <i>Varying Epsilon</i><br><br>
 
-		<div class="content-margin-container">
-				<div class="margin-left-block">
-				</div>
-		    <div class="main-content-block">
-            <h1>Another section</h1>
-            In this section we embed a video:
-						<video class='my-video' loop autoplay muted style="width: 725px">
-								<source src="./images/mtsh.mp4" type="video/mp4">
-						</video>
+We examine the behavior of the SplitPINNFusion architecture under increasing convection dominance by varying the diffusion coefficient over 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi>&#x03B5;</mi><mo>=</mo><mn>0.1</mn><mo>,</mo><mn>0.05</mn><mo>,</mo><mn>0.01</mn>
+</math>.
+This experiment is intended to characterize model robustness as the governing PDE becomes progressively stiffer and develops high near-wall gradients. Since high Peclet regimes are known to challenge traditional PINN formulations, this setup enables a controlled evaluation of whether architectural decoupling mitigates these difficulties. We hypothesize that the split architectures—and in particular the fusion-based variant—will demonstrate improved convergence properties at smaller 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03B5;</mi></math>,
+reflecting their ability to isolate and separately parameterize the distinct physical operators that dominate in different regions of the domain.
+<br><br>
+                        <img src="./images/eps.png" width=1200px/>
+From Figure Y, SplitPINNFusion consistently converges faster than the baseline Vanilla PINN across all 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03B5;</mi></math>
+values, validating our hypothesis. In Table&nbsp;
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>ref</mi><mo>:</mo><mi>tab</mi><mo>:</mo><mi>eps</mi></math>,
+at 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03B5;</mi><mo>=</mo><mn>0.01</mn></math>,
+our model achieves a 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mn>30.4</mn><mo>%</mo>
+</math>
+faster convergence rate than the baseline. As 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03B5;</mi></math>
+increases, the PDE becomes more diffusion-dominated, resulting in a smoother solution and enabling all models to converge in fewer epochs; however, the SplitPINNFusion architecture still maintains a measurable advantage, achieving up to 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mn>25.2</mn><mo>%</mo>
+</math>
+faster convergence at 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03B5;</mi><mo>=</mo><mn>0.1</mn></math>.<br><br>
+<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; text-align: center;">
+    <thead>
+        <tr>
+            <th>&#x03B5;</th>
+            <th>Vanilla Convergence Epoch</th>
+            <th>SplitPINNFusion Convergence Epoch</th>
+            <th><b>Percentage Faster</b></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>0.01</td>
+            <td>7717</td>
+            <td>5368</td>
+            <td>30.4%</td>
+        </tr>
+        <tr>
+            <td>0.05</td>
+            <td>1123</td>
+            <td>997</td>
+            <td>11.2%</td>
+        </tr>
+        <tr>
+            <td>0.1</td>
+            <td>317</td>
+            <td>237</td>
+            <td>25.2%</td>
+        </tr>
+    </tbody>
+</table>
+<br><br>
+            <i>Final Vanilla and SplitPINNFusion Outputs Across Epochs</i><br><br>
+                        <img src="./images/vanilla_across_epochs.png" width=600px/>
+Over the first 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>1000</mn></math>
+epochs, the Vanilla PINN begins to learn the general structure of the solution while satisfying the Dirichlet and Neumann boundary conditions. As the model continues to learn, it begins resolving the inner solution gradients by adjusting the model weights needed to minimize the PDE-governed loss function. At 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10000</mn></math>
+epochs, the model continues to resolve the solution over the entire domain, and the resulting prediction is close to the reference solution.
+
+The heat map evolution demonstrates that as the model continues to learn, the residual error is primarily near the Neumann boundaries. The exponentially decaying source induces strong forcing about 
+<math xmlns="http://www.w3.org/1998/Math/MathML">
+  <mi>y</mi><mo>=</mo><mn>0</mn>
+</math>,
+which serves as the driving source of error in the model.<br><br>
+                        <img src="./images/split_across_epochs.png" width=600px/>
+Early in model training, the SplitPINN similarly begins with a smoothed initial guess based on the randomized weights. As the model continues to learn, it resolves the boundary conditions and the inner solution gradients by adjusting the model weights needed to minimize the PDE-governed loss function. At 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10000</mn></math>
+epochs, the model fine-tunes the solution, resulting in a prediction that is nearly indistinguishable from the reference solution.
+
+The heat map shows that initial iterations are driven by the Neumann boundaries and the spatially varying source, but by 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10000</mn></math>
+epochs the residual becomes primarily dominated by the former. Over each range of plotted samples, the absolute error drops by an order of magnitude as a result of improved expressiveness. Our solution tended to outperform the Vanilla architecture at each of the sampled cycles, as shown in Table&nbsp;
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>ref</mi><mo>:</mo><mi>tab</mi><mo>:</mo><mi>error</mi></math>.<br><br>
+
+<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; text-align: center;">
+    <thead>
+        <tr>
+            <th>Model</th>
+            <th>MSE</th>
+            <th>Rel. L2</th>
+            <th>Max Error</th>
+            <th>MAE</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Vanilla (epoch = 1000)</td>
+            <td>6.5e-02</td>
+            <td>8.8e-01</td>
+            <td>5.1e-01</td>
+            <td>2.2e-01</td>
+        </tr>
+
+        <tr style="border-bottom: 3px solid black;">
+            <td>SplitPINNFusion (epoch = 1000)</td>
+            <td>8.1e-02</td>
+            <td>9.8e-01</td>
+            <td>5.4e-01</td>
+            <td>2.5e-01</td>
+        </tr>
+
+        <tr>
+            <td>Vanilla (epoch = 6000)</td>
+            <td>2.3e-03</td>
+            <td>1.6e-01</td>
+            <td>1.1e-01</td>
+            <td>3.8e-02</td>
+        </tr>
+
+        <tr style="border-bottom: 3px solid black;">
+            <td>SplitPINNFusion (epoch = 6000)</td>
+            <td>3.4e-04</td>
+            <td>6.4e-02</td>
+            <td>4.5e-02</td>
+            <td>1.4e-02</td>
+        </tr>
+
+        <tr>
+            <td>Vanilla (epoch = 10000)</td>
+            <td>2.8e-05</td>
+            <td>1.8e-02</td>
+            <td>2.1e-02</td>
+            <td>3.7e-03</td>
+        </tr>
+
+        <tr>
+            <td>SplitPINNFusion (epoch = 10000)</td>
+            <td>3.1e-06</td>
+            <td>6.1e-03</td>
+            <td>4.7e-03</td>
+            <td>1.4e-03</td>
+        </tr>
+    </tbody>
+</table>
+
 		    </div>
 		    <div class="margin-right-block">
-					A caption for the video could go here.
 		    </div>
 		</div>
 
-		<div class="content-margin-container" id="implications_and_limitations">
+        <div class="content-margin-container" id="discussion">
 				<div class="margin-left-block">
 				</div>
 		    <div class="main-content-block">
-						<h1>Implications and limitations</h1>
-						Let's end with some discussion of the implications and limitations.
+						<h1>Discussion</h1>
+						let's end with some discussion of the implications and limitations.
 		    </div>
 		    <div class="margin-right-block">
 		    </div>
@@ -316,13 +796,15 @@
 				</div>
 		    <div class="main-content-block">
 						<div class='citation' id="references" style="height:auto"><br>
-							<span style="font-size:16px">References:</span><br><br>
-							<a id="ref_1"></a>[1] <a href="https://en.wikipedia.org/wiki/Allegory_of_the_cave">Allegory of the Cave</a>, Plato, c. 375 BC<br><br>
-							<a id="ref_2"></a>[2] <a href="">A Human-Level AGI</a>, OpenAI, 2025<br><br>
+							<span style="font-size:16px">references:</span><br><br>
+							<a id="orig_pinn"></a>[1] <a href="https://www.sciencedirect.com/science/article/pii/s0021999118307125">pinn paper</a>, raissi et al.<br><br>
+							<a id="pinn_ex"></a>[2] <a href=""></a>, guan and elman - single-pinn architecture<br><br>
+							<a id="numerical_decoupling_ex"></a>[3] <a href=""></a>, numerical decoupling<br><br>
+							<a id="spectral_bias"></a>[4] <a href=""></a>, spectral bias<br><br>
+							<a id="pinn_impl"></a>[5] <a href=""></a>, pinn impl<br><br>
 						</div>
 		    </div>
 		    <div class="margin-right-block">
-            <!-- margin notes for reference block here -->
 		    </div>
 		</div>
 
