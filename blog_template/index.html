@@ -212,8 +212,6 @@
 								</tr>
 						</table>
 					</div>
-					<div class="margin-right-block">
-					</div>
 		</div>
 
 		<div class="content-margin-container" id="intro">
@@ -511,6 +509,7 @@ on the
 grid.<br><br>
                         <i>Architectures</i><br><br>
                         <img src="./images/arch-diagram.png" width=600px/>
+
                         <ol>
                             <li><b>Vanilla PINN:</b> 
 As a baseline, we implement a Vanilla PINN as a standard fully-connected feed-forward network (MLP) consisting of two spatial input coordinates, 6 hidden layers, and a hidden dimension of 64. The PINN uses a 
@@ -588,8 +587,10 @@ These feature vectors are then concatenated, and a single additional linear laye
 We wanted to test whether combining the components at a feature level could allow for more complex interactions between the convective and diffusive components.</li>
                         </ol>
 		    </div>
-		    <div class="margin-right-block">
-		    </div>
+            <div class="margin-right-block" style="transform: translate(0%, 0%);"> <!-- you can move the margin notes up and down with translate -->
+                <b>Figure 1.</b> A) Vanilla PINN implementation with a single MLP; B) SplitPINNFusion implementation with separate convection and diffusion nets.
+
+                  </div>
 		</div>
 
         <div class="content-margin-container" id="experiments">
@@ -628,7 +629,7 @@ faster convergence rate than the baseline
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
 architecture.<br><br>
                         <i>Fusing Mechanism</i><br><br>
-                        To assess the influence of the recombination strategy on solution quality, we evaluate three fusion mechanisms for integrating the outputs of the convection and diffusion branches: SplitPINNFusion, AddPINN, MixedPINN. The relative contribution of convection and diffusion can differ substantially across the domain, suggesting that a flexible fusion strategy may better capture local variations in PDE behavior. Our hypothesis is that a learned gating mechanism will provide superior performance, as it can modulate the branch contributions in a spatially adaptive manner, whereas fixed additive fusion may be too restrictive. We believe that feature-level mixing may complicate optimization without offering targeted control over the physical PDE operators. We run each architecture below and summarize convergence history in Figure X.<br><br>
+                        To assess the influence of the recombination strategy on solution quality, we evaluate three fusion mechanisms for integrating the outputs of the convection and diffusion branches: SplitPINNFusion, AddPINN, MixedPINN. The relative contribution of convection and diffusion can differ substantially across the domain, suggesting that a flexible fusion strategy may better capture local variations in PDE behavior. Our hypothesis is that a learned gating mechanism will provide superior performance, as it can modulate the branch contributions in a spatially adaptive manner, whereas fixed additive fusion may be too restrictive. We believe that feature-level mixing may complicate optimization without offering targeted control over the physical PDE operators. We run each architecture below and summarize convergence history in Figure 3.<br><br>
                         <img src="./images/fusing.png" width=600px/>
 We observed that AddPINN converged in 9695 epochs, SplitPINNFusion converged in 5368 epochs, and MixedPINN converged in 6040 epochs. Our findings corroborate our initial hypothesis: the AddPINN and MixedPINN mechanisms take longer to fully capture the coupling between the convective and diffusion term needed to satisfy the governing equation.<br><br>
                         <i>Varying Epsilon</i><br><br>
@@ -642,11 +643,9 @@ This experiment is intended to characterize model robustness as the governing PD
 reflecting their ability to isolate and separately parameterize the distinct physical operators that dominate in different regions of the domain.
 <br><br>
                         <img src="./images/eps.png" width=1200px/>
-From Figure Y, SplitPINNFusion consistently converges faster than the baseline Vanilla PINN across all 
+From Figure 4, SplitPINNFusion consistently converges faster than the baseline Vanilla PINN across all 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03B5;</mi></math>
-values, validating our hypothesis. In Table&nbsp;
-<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>ref</mi><mo>:</mo><mi>tab</mi><mo>:</mo><mi>eps</mi></math>,
-at 
+values, validating our hypothesis. In Table 1 at 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03B5;</mi><mo>=</mo><mn>0.01</mn></math>,
 our model achieves a 
 <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -711,8 +710,7 @@ epochs, the model fine-tunes the solution, resulting in a prediction that is nea
 
 The heat map shows that initial iterations are driven by the Neumann boundaries and the spatially varying source, but by 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10000</mn></math>
-epochs the residual becomes primarily dominated by the former. Over each range of plotted samples, the absolute error drops by an order of magnitude as a result of improved expressiveness. Our solution tended to outperform the Vanilla architecture at each of the sampled cycles, as shown in Table&nbsp;
-<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>ref</mi><mo>:</mo><mi>tab</mi><mo>:</mo><mi>error</mi></math>.<br><br>
+epochs the residual becomes primarily dominated by the former. Over each range of plotted samples, the absolute error drops by an order of magnitude as a result of improved expressiveness. Our solution tended to outperform the Vanilla architecture at each of the sampled cycles, as shown in Table 2.
 
 <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; text-align: center;">
     <thead>
@@ -776,8 +774,35 @@ epochs the residual becomes primarily dominated by the former. Over each range o
 </table>
 
 		    </div>
-		    <div class="margin-right-block">
-		    </div>
+        <div class="margin-right-block" style="transform: translate(0%, 400%);">
+			<p style="transform: translate(0%, -4600%);">
+				<b>Figure 2.</b> Test error over epoch comparison between Vanilla, SplitPINNFusion with Silu and Tanh, and SplitPINNFusion with just Tanh.
+			</p>
+
+			<p style="transform: translate(0%, -5200%);">
+				<b>Figure 3.</b> Test error over epoch comparsion between different fusing mechanisms.
+			</p>
+		
+			<p style="transform: translate(0%, -4200%);">
+				<b>Figure 4.</b> Test error over epoch comparision between Vanilla and SplitPINNFusion for varying epsilon.
+			</p>
+		
+			<p style="transform: translate(0%, -3800%);">
+				<b>Table 1.</b> The number of epochs to reach convergence for Vanilla and SplittPINNFusion for varying epsilon.
+			</p>
+
+			<p style="transform: translate(0%, -3100%);">
+				<b>Figure 5.</b> Evolution of Vanilla PINN predictions over training at epochs 1000, 6000, and 10000.
+			</p>
+
+			<p style="transform: translate(0%, -2000%);">
+				<b>Figure 6.</b> Evolution of SplitPINNFusion predictions over training at epochs 1000, 6000, and 10000.
+			</p>
+
+			<p style="transform: translate(0%, -1600%);">
+				<b>Table 2.</b> Error metrics for Vanilla PINN and SplitPINNFusion across epochs.
+			</p>
+		</div>
 		</div>
 
         <div class="content-margin-container" id="discussion">
