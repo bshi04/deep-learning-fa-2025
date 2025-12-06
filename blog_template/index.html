@@ -810,7 +810,17 @@ epochs the residual becomes primarily dominated by the former. Over each range o
 				</div>
 		    <div class="main-content-block">
 						<h1>Discussion</h1>
-						let's end with some discussion of the implications and limitations.
+In this study, we develop and analyze a novel split architecture for solving the steady-state 2D convection-diffusion equation. Across all experiments, SplitPINNFusion consistently outperformed the baseline Vanilla PINN in both convergence speed and solution accuracy. We showed that using a SiLU activation in the convection branch improves the network’s ability to capture sharp gradients, while the diffusion branch benefits from a smooth 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
+activation. Our analysis of fusion mechanisms confirmed that a learned gating strategy outperforms fixed additive and feature-level fusion by adaptively weighting the convective and diffusive contributions across the domain. By varying the diffusion coefficient 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03B5;</mi></math>,
+we demonstrated that SplitPINNFusion remains robust under high Peclet numbers 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi mathvariant="bold">Pe</mi></math>,
+maintaining faster convergence and lower error even as the PDE becomes increasingly convection-dominated.<br><br>
+
+We performed multiple trial runs per architecture to ensure consistent behavior. While our results were largely consistent, we note that there may be a significant variance in the training performance because it is nondeterministic - the initial weight parameters and sampled points may heavily influence training behavior.<br><br>
+
+These results indicate that decoupling network components to the underlying physical operators mitigates spectral bias and improves training stability. These findings have direct implications for PINNs applications in fluid dynamics and other multi-scale systems. Future work can consider the experimenting with depth variation between the two parallel branches, applying split frameworks to time-dependent PDE's, and evaluating architectural performance for diffusion-dominated PDEs.<br><br>
 		    </div>
 		    <div class="margin-right-block">
 		    </div>
@@ -821,7 +831,7 @@ epochs the residual becomes primarily dominated by the former. Over each range o
 				</div>
 		    <div class="main-content-block">
 						<div class='citation' id="references" style="height:auto"><br>
-							<span style="font-size:16px">references:</span><br><br>
+							<span style="font-size:16px">References:</span><br><br>
 							<a id="orig_pinn"></a>[1] <a href="https://www.sciencedirect.com/science/article/pii/s0021999118307125">Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations</a>, Raissi et al., 2019<br><br>
 							<a id="pinn_ex"></a>[2] <a href="https://arxiv.org/pdf/2409.07671">Transformed Physics-Informed Neural Networks for the Convection-Diffusion Equation</a>, Guan et al., 2024<br><br>
 							<a id="numerical_decoupling_ex"></a>[3] <a href="https://chertock.wordpress.ncsu.edu/files/2018/05/Chertock-Kurganov.pdf">On Splitting-Based Numerical Methods for
