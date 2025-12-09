@@ -207,10 +207,10 @@
 								</tr>
 								<tr>
 										<td align=left>
-												<span style="font-size:17px"><a href="your_website">Osahon Odiase</a></span>
+												<span style="font-size:17px"><a href="osahon@mit.edu">Osahon Odiase</a></span>
 										</td>
 										<td align=left>
-												<span style="font-size:17px"><a href="your_partner's_website">Brian Shi</a></span>
+												<span style="font-size:17px"><a href="brianshi@mit.edu">Brian Shi</a></span>
 										</td>
 								<tr>
 									<td colspan=4 align=left><span style="font-size:18px">Final project for 6.7960, MIT</span></td>
@@ -482,7 +482,7 @@ respectively, indicating that the numerical solution is sufficiently converged.
 
 For our PINNs, we sample collocation points over the square domain. The governing equations are solved at each point and compared to the numerically computed fine-mesh solution to determine the error.<br><br>
                         <i>Convergence Criteria</i><br><br>
-In our experiments, our main criteria for quantitatively understanding the performance of the models was examining the number of epochs for convergence. We define the convergence of the model as when the mean squared error of the predicted 
+In our experiments, our main criteria for quantitatively understanding the performance of the models was examining the number of epochs to convergence. We define the convergence of the model as when the mean squared error of the predicted 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>u</mi></math>
 values compared to the ground truth 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>u</mi></math>
@@ -599,7 +599,7 @@ We wanted to test whether combining the components at a feature level could allo
 						<h1>Experiments</h1>
 
                         <i>Activation Function</i><br><br>
-The largest advantage of a split mechanism was having more fine-grained control over the training of each of the network’s components. Thus, we examined the behavior of the SplitPINNFusion network compared to the Vanilla PINN in the case where both branches used the 
+The largest advantage of a split mechanism was having more fine-grained control over the training of each of the network’s components. Thus, we examined the behavior of the SplitPINNFusion network compared to the Vanilla PINN in the case where both branches use the 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
 activation function, and in the case where the diffusion branch uses 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
@@ -811,7 +811,7 @@ we demonstrated that SplitPINNFusion remains robust under high Peclet numbers
 maintaining faster convergence and lower error than the Vanilla PINN.
 <br><br>
 
-We performed multiple trial runs per architecture to ensure consistent behavior. While our results were largely consistent, we note that there may be a significant variance in training performance because it is nondeterministic - the initial weight parameters and sampled points may heavily influence training behavior. To provide a fuller picture, future work with more compute resources may involve examining convergence rates across multiple trial runs and reporting the average and standard deviation of epochs to convergence.<br><br>
+We performed multiple trial runs per architecture to ensure consistent behavior. While our results were largely consistent, we note that there may be a significant variance in training performance because it is nondeterministic - the initial weight parameters and sampled training points may heavily influence training behavior. To provide a fuller picture, future work with more compute resources may involve examining convergence rates across multiple trial runs and reporting the average and standard deviation of epochs to convergence.<br><br>
 
 These results indicate that decoupling network components to the underlying physical operators mitigates spectral bias and improves training stability. These findings have direct implications for PINNs applications in fluid dynamics and other multi-scale systems. Future work can consider the experimenting with depth variation between the two parallel branches, applying split frameworks to time-dependent PDE's, and evaluating architectural performance for diffusion-dominated PDEs.
 		    </div>
