@@ -197,7 +197,7 @@
 						<table class="header" align=left>
 								<tr>
 									<td colspan=4>
-										<span style="font-size: 32px; font-family: 'Courier New', Courier, monospace; /* Adds fallbacks */">SplitPINNFusion</span>
+										<span style="font-size: 32px; font-family: 'Courier New', Courier, monospace; /* Adds fallbacks */">SplitPINNFusion: A Dual-Branch Physics-Informed Neural Network for Convection–Diffusion</span>
 									</td>
 								</tr>
 								<tr>
@@ -233,8 +233,8 @@
 				</div>
 		    <div class="main-content-block">
 						<h1>Introduction</h1>
-                        Physics-Informed Neural Networks (PINNs) integrate physical laws, typically expressed as differential equations, directly into the loss function of neural networks <a href="#orig_pinn">[1]</a>. This approach enables models to learn from both observational data and underlying physical principles. Since pure PINNs require no initial data for training, they are particularly useful in approximating partial differential equations (PDEs) that may be challenging for traditional numerical methods when there is sparse or no data. <br><br>
-                        This project experiments with a new PINN architecture to solve the 2-D convection-diffusion equation, which governs how quantities like concentration or temperature evolve in a medium through diffusion and convection. Diffusion captures random spreading driven by molecular motion and convection (advection) represents directional transport by bulk fluid flow. Existing PINN approaches apply a single unified architecture to all terms in the convection-diffusion equation <a href="#pinn_ex">[2]</a>. Our work introduces SplitPINNFusion, a dual-branch architecture that optimizes the diffusion and convection components independently then re-merges them together.
+                        Physics-Informed Neural Networks (PINNs) integrate physical laws directly into the loss function of neural networks, allowing models to learn from both data and physical principles <a href="#orig_pinn">[1]</a>. Unlike traditional numerical methods, PINNs solve partial differential equations (PDEs) without relying on discretizations or large meshes. Despite their advantages, PINNs often face slower convergence and reduced accuracy for many forward problems, most notably in non-linear or stiff PDEs.<br><br>
+                        This project experiments with a new PINN architecture to solve the 2D convection-diffusion equation, which governs how quantities like concentration or temperature evolve in a medium through diffusion and convection. Diffusion captures random spreading driven by molecular motion, and convection represents directional transport resulting from bulk flow. Existing PINN approaches apply a single unified architecture to all terms in the convection-diffusion equation <a href="#pinn_ex">[2]</a>. Our work introduces SplitPINNFusion, a dual-branch architecture that optimizes the diffusion and convection components independently then re-merges them together.
 		    </div>
 		</div>
 
@@ -248,7 +248,7 @@ The PDE that defines the evolution of the function
   <mi>u</mi>
 </math>
 under diffusion and convection in steady-state (no time-dependent term) is
-<br>
+<br><br>
 <center>
   <math xmlns="http://www.w3.org/1998/Math/MathML">
     <mrow>
@@ -272,6 +272,7 @@ under diffusion and convection in steady-state (no time-dependent term) is
     </mrow>
   </math>
 </center>
+<br>
 
 <math xmlns="http://www.w3.org/1998/Math/MathML">
   <mi mathvariant="bold">U</mi>
@@ -301,8 +302,10 @@ where
 is the characteristic length scale of the domain.<br><br>
 
 To address numerical stiffness for high Peclet numbers, researchers have developed numerical formulations to decouple and re-couple the convective and diffusion terms during computation <a href="#numerical_decoupling_ex">[3]</a>. The convective term introduces high directional gradients, resulting in numerical instabilities, which can make the underlying PDE non-smooth. In modern PINN-architectures, the loss function is typically computed from the full underlying PDE without regard to the underlying characteristics that may drive instability.<br><br>
-A further challenge that arises in standard PINNs is the spectral bias of neural networks <a href="#spectral_bias">[4]</a>. Standard PINNs may be able to pick up on smooth functions (diffusion) more effectively than non-smooth functions (convection). This inherent preference for low-frequency features can lead to poor approximations of the convective term, especially at high Peclet numbers.<br><br>
-Drawing from the numerical formulation, we consider a series of decoupled architectures to have more fine-grained control over each of the parameters of the PDE. We hypothesize that decoupling the architectures can improve the expressiveness of the convective term for high Peclet number PDEs. We examine whether we can optimize for two different scales, thereby improving traditional PINN accuracy and stability.
+
+A further challenge that arises in standard PINNs is the spectral bias of neural networks <a href="#spectral_bias">[4]</a>. Standard PINNs may be able to pick up on smooth functions more effectively than non-smooth functions. This inherent preference for low-frequency features can lead to poor approximations of the convective term, especially at high Peclet numbers.<br><br>
+
+Drawing from the numerical formulation, we consider a series of decoupled architectures to have more fine-grained control over each of the parameters of the PDE. We hypothesize that decoupling the architectures can improve the expressiveness of the convective term for high Peclet number PDEs. We examine whether we can optimize for two different scales, thereby improving traditional PINN accuracy and convergence rates.
 		    </div>
 		</div>
 
@@ -313,21 +316,16 @@ Drawing from the numerical formulation, we consider a series of decoupled archit
 						<h1>Methodology</h1>
                         <i>Problem Formulation</i><br><br>
 
-For our PINN tests, the model has access only to the governing PDE and boundary conditions, but no supervised training data. This is particularly relevant in applications where observational measurements are limited or costly to obtain. We test our PINNs on the following PDE: we prescribe 2D convection–diffusion on a square domain of length 
-<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>1</mn></math>
-consisting of 
+For our PINN tests, the model has access only to the governing PDE and boundary conditions, but no supervised training data. This is particularly relevant in applications where observational measurements are limited or costly to obtain. We examine 2D convection-diffusion on a square domain of length 1 consisting of 
 <math xmlns="http://www.w3.org/1998/Math/MathML">
   <mn>400</mn><mo>&#x00D7;</mo><mn>400</mn>
 </math>
-points.
-
-We have the source function 
+points. The source function is governed by 
 <math xmlns="http://www.w3.org/1998/Math/MathML">
   <mrow>
     <mi>f</mi><mo>(</mo><mi>y</mi><mo>)</mo>
     <mo>=</mo>
     <msub><mi>s</mi><mn>0</mn></msub>
-    <mo>⁢</mo>
     <msup>
       <mi>e</mi>
       <mrow><mo>-</mo><mi>&#x03B2;</mi><mi>y</mi></mrow>
@@ -342,31 +340,24 @@ and
 <math xmlns="http://www.w3.org/1998/Math/MathML">
   <mi>&#x03B2;</mi><mo>=</mo><mn>1.0</mn>
 </math>.
-
-When we are not performing hyperparameter sweeps, we use constant coefficients 
-<math xmlns="http://www.w3.org/1998/Math/MathML">
-  <mi>U</mi><mo>=</mo><mn>0.1</mn>
-</math>,
+When we are not performing hyperparameter sweeps, we have constant coefficients 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>U</mi><mo>=</mo><mn>0.1</mn></math>,
 <math xmlns="http://www.w3.org/1998/Math/MathML">
   <mi>&#x03B5;</mi><mo>=</mo><msup><mn>10</mn><mrow><mo>-</mo><mn>2</mn></mrow></msup>
 </math>.
-
-The left and right walls enforce a Dirichlet boundary condition 
-<math xmlns="http://www.w3.org/1998/Math/MathML">
-  <mi>u</mi><mo>=</mo><mn>0</mn>
-</math>,
-and a homogeneous Neumann (zero-flux) boundary condition 
+The left and right walls enforce a Dirichlet boundary condition, 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>u</mi><mo>=</mo><mn>0</mn></math>,
+and the top and bottom walls enforce a homogeneous Neumann (zero-flux) boundary condition, 
 <math xmlns="http://www.w3.org/1998/Math/MathML">
   <mfrac>
     <mrow><mo>&#x2202;</mo><mi>u</mi></mrow>
     <mrow><mo>&#x2202;</mo><mi>n</mi></mrow>
   </mfrac>
   <mo>=</mo><mn>0</mn>
-</math>
-is applied to the top and bottom walls.<br><br>
+</math>.<br><br>
                         <i>Ground Truth Data Generation</i><br><br>
 To generate reference data, we manually create our own finite-difference (FD) solver in Python. A standard second-order central-difference scheme is used to approximate the diffusion operator with high fidelity,
-
+<br><br>
 <center>
   <math xmlns="http://www.w3.org/1998/Math/MathML">
     <mrow>
@@ -422,13 +413,13 @@ To generate reference data, we manually create our own finite-difference (FD) so
     </mrow>
   </math>
 </center>
-
+<br>
 where 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x0394;x</mi></math>
 and
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x0394;y</mi></math>
 are the spatial coordinates. The convection term is discretized using a first-order upwind scheme,
-
+<br><br>
 <center>
   <math xmlns="http://www.w3.org/1998/Math/MathML">
     <mrow>
@@ -464,7 +455,7 @@ are the spatial coordinates. The convection term is discretized using a first-or
     </mrow>
   </math>
 </center>
-
+<br>
 A mesh sensitivity study is conducted a priori to verify that the chosen finite-difference mesh yields a resolution-independent reference solution.  
 The 
 <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -519,7 +510,7 @@ activation function and outputs a single value: the predicted
   <mi>u</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo>
 </math>.
 The PINN is trained by minimizing a loss function that contains a PDE residual loss and two boundary-condition losses (one for Dirichlet and one for Neumann). Throughout the training process, we sample 
-<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10000</mn></math>
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10,000</mn></math>
 interior points and 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mn>1000</mn></math>
 boundary points per epoch, compute the total loss, and update the network’s weights. In the above diagram, architecture A describes the Vanilla PINN.<br><br></li>
@@ -551,6 +542,7 @@ and
 branches are combined through a small gating network that produces a scalar value (between 0 and 1 using a sigmoid activation). The final solution 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>u</mi></math>
 is a weighted sum,
+<br><br>
 <center>
   <math xmlns="http://www.w3.org/1998/Math/MathML">
     <mrow>
@@ -566,6 +558,7 @@ is a weighted sum,
     </mrow>
   </math>
 </center>
+<br>
 This gating mechanism allows the network to adaptively emphasize either the convective or diffusive behavior depending on the region of the domain, thereby fusing the contributions of the two specialized branches.<br><br>
                             </li>
                             <li><b>AddPINN:</b>
@@ -587,7 +580,8 @@ These feature vectors are then concatenated, and a single additional linear laye
 We wanted to test whether combining the components at a feature level could allow for more complex interactions between the convective and diffusive components.</li>
                         </ol>
 		    </div>
-            <div class="margin-right-block" style="transform: translate(0%, 0%);"> <!-- you can move the margin notes up and down with translate -->
+
+            <div class="margin-right-block" style="transform: translate(0%, -30%);"> <!-- you can move the margin notes up and down with translate -->
                 <b>Figure 1.</b> A) Vanilla PINN implementation with a single MLP; B) SplitPINNFusion implementation with separate convection and diffusion nets.
 
                   </div>
@@ -692,26 +686,21 @@ faster convergence at
 <br><br>
             <i>Final Vanilla and SplitPINNFusion Outputs Across Epochs</i><br><br>
                         <img src="./images/vanilla_across_epochs.png" width=600px/>
+                        <br>
 Over the first 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mn>1000</mn></math>
 epochs, the Vanilla PINN begins to learn the general structure of the solution while satisfying the Dirichlet and Neumann boundary conditions. As the model continues to learn, it begins resolving the inner solution gradients by adjusting the model weights needed to minimize the PDE-governed loss function. At 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10000</mn></math>
-epochs, the model continues to resolve the solution over the entire domain, and the resulting prediction is close to the reference solution.
-
-The heat map evolution demonstrates that as the model continues to learn, the residual error is primarily near the Neumann boundaries. The exponentially decaying source induces strong forcing about 
-<math xmlns="http://www.w3.org/1998/Math/MathML">
-  <mi>y</mi><mo>=</mo><mn>0</mn>
-</math>,
-which serves as the driving source of error in the model.<br><br>
+epochs, the model continues to resolve the solution over the entire domain, and the resulting prediction is close to the reference solution. The heat map evolution demonstrates that as the model continues to learn, the residual error is highest near the Neumann boundaries. The exponentially decaying source induces strong forcing near 
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>y</mi><mo>=</mo><mn>0</mn></math>,
+which serves as the driving source of error in the model.
+<br><br>
                         <img src="./images/split_across_epochs.png" width=600px/>
-Early in model training, the SplitPINN similarly begins with a smoothed initial guess based on the randomized weights. As the model continues to learn, it resolves the boundary conditions and the inner solution gradients by adjusting the model weights needed to minimize the PDE-governed loss function. At 
+                        <br>
+Early on in model training, the SplitPINN similarly begins with a smoothed-guess based on initialized weights. As the model continues to learn, it resolves the boundary conditions and the inner solution gradients by adjusting the model weights needed to minimize the PDE-governed loss function. At 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10000</mn></math>
-epochs, the model fine-tunes the solution, resulting in a prediction that is nearly indistinguishable from the reference solution.
-
-The heat map shows that initial iterations are driven by the Neumann boundaries and the spatially varying source, but by 
-<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10000</mn></math>
-epochs the residual becomes primarily dominated by the former. Over each range of plotted samples, the absolute error drops by an order of magnitude as a result of improved expressiveness. Our solution tended to outperform the Vanilla architecture at each of the sampled cycles, as shown in Table 2.
-
+epochs, the model fine-tunes the solution, resulting in a prediction that is nearly indistinguishable from the reference solution. The heat map shows that initial iterations are driven by the Neumann boundaries and the spatially varying source, but in later iterations it is dominated by the former. Over each range of plotted samples, the absolute error drops by an order of magnitude as a result of improved expressiveness. Our solution tended to outperform the Vanilla architecture at each of the sampled cycles, shown in Table 2.
+<br><br>
 <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; text-align: center;">
     <thead>
         <tr>
@@ -775,7 +764,7 @@ epochs the residual becomes primarily dominated by the former. Over each range o
 
 		    </div>
         <div class="margin-right-block" style="transform: translate(0%, 400%);">
-			<p style="transform: translate(0%, -4600%);">
+			<p style="transform: translate(0%, -4630%);">
 				<b>Figure 2.</b> Test error over epoch comparison between Vanilla, SplitPINNFusion with Silu and Tanh, and SplitPINNFusion with just Tanh.
 			</p>
 
@@ -783,15 +772,15 @@ epochs the residual becomes primarily dominated by the former. Over each range o
 				<b>Figure 3.</b> Test error over epoch comparsion between different fusing mechanisms.
 			</p>
 		
-			<p style="transform: translate(0%, -4200%);">
+			<p style="transform: translate(0%, -4250%);">
 				<b>Figure 4.</b> Test error over epoch comparision between Vanilla and SplitPINNFusion for varying epsilon.
 			</p>
 		
-			<p style="transform: translate(0%, -3800%);">
+			<p style="transform: translate(0%, -3850%);">
 				<b>Table 1.</b> The number of epochs to reach convergence for Vanilla and SplittPINNFusion for varying epsilon.
 			</p>
 
-			<p style="transform: translate(0%, -3100%);">
+			<p style="transform: translate(0%, -3150%);">
 				<b>Figure 5.</b> Evolution of Vanilla PINN predictions over training at epochs 1000, 6000, and 10000.
 			</p>
 
@@ -810,17 +799,16 @@ epochs the residual becomes primarily dominated by the former. Over each range o
 				</div>
 		    <div class="main-content-block">
 						<h1>Discussion</h1>
-In this study, we develop and analyze a novel split architecture for solving the steady-state 2D convection-diffusion equation. Across all experiments, SplitPINNFusion consistently outperformed the baseline Vanilla PINN in both convergence speed and solution accuracy. We showed that using a SiLU activation in the convection branch improves the network’s ability to capture sharp gradients, while the diffusion branch benefits from a smooth 
-<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
-activation. Our analysis of fusion mechanisms confirmed that a learned gating strategy outperforms fixed additive and feature-level fusion by adaptively weighting the convective and diffusive contributions across the domain. By varying the diffusion coefficient 
+In this study, we develop and analyze a novel split architecture for solving the steady-state 2D convection-diffusion equation. Across all experiments, SplitPINNFusion consistently outperformed the baseline Vanilla PINN in both convergence speed and solution accuracy. We showed that using a SiLU activation in the convection branch improves the network’s ability to capture sharp gradients, thereby improving convergence. Our fusion experiments confirmed that a learned gating strategy outperforms fixed additive and feature-level fusion by adaptively weighting the convective and diffusive contributions across the domain. By varying the diffusion coefficient 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03B5;</mi></math>,
 we demonstrated that SplitPINNFusion remains robust under high Peclet numbers 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi mathvariant="bold">Pe</mi></math>,
-maintaining faster convergence and lower error even as the PDE becomes increasingly convection-dominated.<br><br>
+maintaining faster convergence and lower error than the Vanilla PINN.
+<br><br>
 
-We performed multiple trial runs per architecture to ensure consistent behavior. While our results were largely consistent, we note that there may be a significant variance in the training performance because it is nondeterministic - the initial weight parameters and sampled points may heavily influence training behavior.<br><br>
+We performed multiple trial runs per architecture to ensure consistent behavior. While our results were largely consistent, we note that there may be a significant variance in the training performance because it is nondeterministic - the initial weight parameters and sampled points may heavily influence training behavior. To provide a fuller picture, future work may involve examining convergence rates across multiple trial runs, reporting the average and standard deviation of epochs to convergence.<br><br>
 
-These results indicate that decoupling network components to the underlying physical operators mitigates spectral bias and improves training stability. These findings have direct implications for PINNs applications in fluid dynamics and other multi-scale systems. Future work can consider the experimenting with depth variation between the two parallel branches, applying split frameworks to time-dependent PDE's, and evaluating architectural performance for diffusion-dominated PDEs.<br><br>
+These results indicate that decoupling network components to the underlying physical operators mitigates spectral bias and improves training stability. These findings have direct implications for PINNs applications in fluid dynamics and other multi-scale systems. Future work can consider the experimenting with depth variation between the two parallel branches, applying split frameworks to time-dependent PDE's, and evaluating architectural performance for diffusion-dominated PDEs.
 		    </div>
 		    <div class="margin-right-block">
 		    </div>
