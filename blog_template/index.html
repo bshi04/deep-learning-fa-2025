@@ -806,7 +806,7 @@ we demonstrated that SplitPINNFusion remains robust under high Peclet numbers
 maintaining faster convergence and lower error than the Vanilla PINN.
 <br><br>
 
-We performed multiple trial runs per architecture to ensure consistent behavior. While our results were largely consistent, we note that there may be a significant variance in the training performance because it is nondeterministic - the initial weight parameters and sampled points may heavily influence training behavior. To provide a fuller picture, future work may involve examining convergence rates across multiple trial runs, reporting the average and standard deviation of epochs to convergence.<br><br>
+We performed multiple trial runs per architecture to ensure consistent behavior. While our results were largely consistent, we note that there may be a significant variance in training performance because it is nondeterministic - the initial weight parameters and sampled points may heavily influence training behavior. To provide a fuller picture, future work with more compute resources may involve examining convergence rates across multiple trial runs and reporting the average and standard deviation of epochs to convergence.<br><br>
 
 These results indicate that decoupling network components to the underlying physical operators mitigates spectral bias and improves training stability. These findings have direct implications for PINNs applications in fluid dynamics and other multi-scale systems. Future work can consider the experimenting with depth variation between the two parallel branches, applying split frameworks to time-dependent PDE's, and evaluating architectural performance for diffusion-dominated PDEs.
 		    </div>
