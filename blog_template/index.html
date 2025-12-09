@@ -84,8 +84,13 @@
 		margin-top: 4px;
 		margin-bottom: 10px;
 	}
-
-	table.header {
+  
+  table {
+      margin-left: auto;
+      margin-right: auto;
+  }
+	
+  table.header {
     font-weight: 300;
     font-size: 17px;
     flex-grow: 1;
@@ -234,7 +239,7 @@
 		    <div class="main-content-block">
 						<h1>Introduction</h1>
                         Physics-Informed Neural Networks (PINNs) integrate physical laws directly into the loss function of neural networks, allowing models to learn from both data and physical principles <a href="#orig_pinn">[1]</a>. Unlike traditional numerical methods, PINNs solve partial differential equations (PDEs) without relying on discretizations or large meshes. Despite their advantages, PINNs often face slower convergence and reduced accuracy for many forward problems, most notably in non-linear or stiff PDEs.<br><br>
-                        This project experiments with a new PINN architecture to solve the 2D convection-diffusion equation, which governs how quantities like concentration or temperature evolve in a medium through diffusion and convection. Diffusion captures random spreading driven by molecular motion, and convection represents directional transport resulting from bulk flow. Existing PINN approaches apply a single unified architecture to all terms in the convection-diffusion equation <a href="#pinn_ex">[2]</a>. Our work introduces SplitPINNFusion, a dual-branch architecture that optimizes the diffusion and convection components independently then re-merges them together.
+                        This project experiments with a new PINN architecture to solve the 2D convection-diffusion equation, which governs how quantities like concentration or temperature evolve in a medium through diffusion and convection. Diffusion spreads a quantity along its concentration gradient, while convection transports it through bulk flow. Existing PINN approaches apply a single unified architecture to all terms in the convection-diffusion equation, which limits how each process can be represented <a href="#pinn_ex">[2]</a>. Our work introduces SplitPINNFusion, a dual-branch architecture that optimizes the diffusion and convection components independently then re-merges them together.
 		    </div>
 		</div>
 
@@ -510,12 +515,12 @@ activation function and outputs a single value: the predicted
   <mi>u</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo>
 </math>.
 The PINN is trained by minimizing a loss function that contains a PDE residual loss and two boundary-condition losses (one for Dirichlet and one for Neumann). Throughout the training process, we sample 
-<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10,000</mn></math>
+<math xmlns="http://www.w3.org/1998/Math/MathML"><mn>10000</mn></math>
 interior points and 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mn>1000</mn></math>
-boundary points per epoch, compute the total loss, and update the network’s weights. In the above diagram, architecture A describes the Vanilla PINN.<br><br></li>
+boundary points per epoch, compute the total loss, and update the network’s weights. In Figure 1, architecture A describes the Vanilla PINN.<br><br></li>
                             <li><b>SplitPINNFusion:</b> 
-Our new architecture is an extension of the Vanilla PINN that dedicates separate neural network branches to handle convection and diffusion. In the above diagram, architecture B describes SplitPINNFusion. The diffusion branch is an MLP with 6 hidden layers, has a hidden dimension of 45, and uses a 
+Our new architecture is an extension of the Vanilla PINN that dedicates separate neural network branches to handle convection and diffusion. In Figure 1, architecture B describes SplitPINNFusion. The diffusion branch is an MLP with 6 hidden layers, has a hidden dimension of 45, and uses a 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
 activation function. The convection branch is an MLP with 6 hidden layers, has a hidden dimension of 45, and uses a 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>SiLU</mi></math>
@@ -605,7 +610,7 @@ We initially hypothesized that since the convection term drives stiffness, a SiL
 because SiLU is non-saturating and allows for directional growth, whereas 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>tanh</mi></math>
 is smooth and symmetric.<br><br>
-To test our hypothesis, we run the Vanilla architecture and each SplitPINNFusion variation for 10,000 epochs and evaluate test error.<br><br>
+To test our hypothesis, we run the Vanilla architecture and each SplitPINNFusion variation for 10000 epochs and summarize test error in Figure 2.<br><br>
                         <img src="./images/arch.png" width=600px/>
 Both SplitPINNFusion configurations demonstrate faster convergence than the baseline Vanilla PINN, indicating that the architectural decoupling improves the PDE learning process independent of the choice of activation. The SplitPINNFusion SiLU variation converges in 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mn>5368</mn></math>
@@ -625,14 +630,14 @@ architecture.<br><br>
                         <i>Fusing Mechanism</i><br><br>
                         To assess the influence of the recombination strategy on solution quality, we evaluate three fusion mechanisms for integrating the outputs of the convection and diffusion branches: SplitPINNFusion, AddPINN, and MixedPINN. The relative contribution of convection and diffusion can differ substantially across the domain, suggesting that a flexible fusion strategy may better capture local variations in PDE behavior. Our hypothesis is that a learned gating mechanism will provide superior performance, as it can modulate the branch contributions in a spatially adaptive manner, whereas fixed additive fusion may be too restrictive. We believe that feature-level mixing may complicate optimization without offering targeted control over the physical PDE operators. We run each architecture below and summarize convergence history in Figure 3.<br><br>
                         <img src="./images/fusing.png" width=600px/>
-We observed that AddPINN converged in 9695 epochs, SplitPINNFusion converged in 5368 epochs, and MixedPINN converged in 6040 epochs. Our findings corroborate our initial hypothesis: the AddPINN and MixedPINN mechanisms take longer to fully capture the coupling between the convective and diffusion term needed to satisfy the governing equation.<br><br>
+We observed that AddPINN converged in 9695 epochs, SplitPINNFusion converged in 5368 epochs, and MixedPINN converged in 6040 epochs. Our findings corroborate the initial hypothesis that AddPINN and MixedPINN converge more slowly, because they take longer to capture the required coupling between the convective and diffusion terms.<br><br>
                         <i>Varying Epsilon</i><br><br>
 
 We examine the behavior of the SplitPINNFusion architecture under increasing convection dominance by varying the diffusion coefficient over 
 <math xmlns="http://www.w3.org/1998/Math/MathML">
   <mi>&#x03B5;</mi><mo>=</mo><mn>0.1</mn><mo>,</mo><mn>0.05</mn><mo>,</mo><mn>0.01</mn>
 </math>.
-This experiment is intended to characterize model robustness as the governing PDE becomes progressively stiffer and develops high near-wall gradients. Since high Peclet regimes are known to challenge traditional PINN formulations, this setup enables a controlled evaluation of whether architectural decoupling mitigates these difficulties. We hypothesize that the split architectures—and in particular the fusion-based variant—will demonstrate improved convergence properties at smaller 
+This experiment is intended to characterize model robustness as the governing PDE becomes progressively stiffer and develops high near-wall gradients. Since high Peclet regimes are known to challenge solvers, this setup enables a controlled evaluation of whether architectural decoupling mitigates these difficulties. We hypothesize that the split architectures—and in particular the fusion-based variant—will demonstrate improved convergence properties at smaller 
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x03B5;</mi></math>,
 reflecting their ability to isolate and separately parameterize the distinct physical operators that dominate in different regions of the domain.
 <br><br>
@@ -765,7 +770,7 @@ epochs, the model fine-tunes the solution, resulting in a prediction that is nea
 		    </div>
         <div class="margin-right-block" style="transform: translate(0%, 400%);">
 			<p style="transform: translate(0%, -4630%);">
-				<b>Figure 2.</b> Test error over epoch comparison between Vanilla, SplitPINNFusion with Silu and Tanh, and SplitPINNFusion with just Tanh.
+				<b>Figure 2.</b> Test error over epoch comparison between Vanilla, SplitPINNFusion with Silu and Tanh, and SplitPINNFusion with only Tanh.
 			</p>
 
 			<p style="transform: translate(0%, -5200%);">
