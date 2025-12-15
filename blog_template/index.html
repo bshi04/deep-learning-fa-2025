@@ -248,11 +248,11 @@
 				</div>
 		    <div class="main-content-block">
 					<h1>Background and Related Work</h1>
-The PDE that defines the evolution of the function
+The PDE that determines the steady-state evolution of the function
 <math xmlns="http://www.w3.org/1998/Math/MathML">
   <mi>u</mi>
 </math>
-under diffusion and convection in steady-state (no time-dependent term) is
+under diffusion and convection is given by,
 <br><br>
 <center>
   <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -275,7 +275,7 @@ under diffusion and convection in steady-state (no time-dependent term) is
       <mi>f</mi>
       <mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo>
     </mrow>
-  </math>
+  </math>.
 </center>
 <br>
 
@@ -364,7 +364,7 @@ and the top and bottom walls enforce a homogeneous Neumann (zero-flux) boundary 
 To generate reference data, we manually create our own finite-difference (FD) solver in Python. A standard second-order central-difference scheme is used to approximate the diffusion operator with high fidelity,
 <br><br>
 <center>
-  <math xmlns="http://www.w3.org/1998/Math/MathML">
+  <math xmlns="http://www.w3.org/1998/Math/MathML" mathsize="125%">
     <mrow>
       <mfrac>
         <mrow>
@@ -414,7 +414,7 @@ To generate reference data, we manually create our own finite-difference (FD) so
         </mrow>
         <msup><mi>&#x0394;y</mi><mn>2</mn></msup>
       </mfrac>
-      <mo>.</mo>
+      <mo>,</mo>
     </mrow>
   </math>
 </center>
@@ -423,10 +423,10 @@ where
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x0394;x</mi></math>
 and
 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&#x0394;y</mi></math>
-are the spatial coordinates. The convection term is discretized using a first-order upwind scheme,
+are the spatial coordinates. The convection term is discretized using a second-order central difference scheme,
 <br><br>
 <center>
-  <math xmlns="http://www.w3.org/1998/Math/MathML">
+  <math xmlns="http://www.w3.org/1998/Math/MathML" mathsize="125%">
     <mrow>
       <mfrac>
         <mrow><mi>d</mi><mi>u</mi></mrow>
@@ -435,11 +435,11 @@ are the spatial coordinates. The convection term is discretized using a first-or
       <mo>&#x2248;</mo>
       <mfrac>
         <mrow>
-          <msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi></mrow></msub>
+          <msub><mi>u</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn><mo>,</mo><mi>j</mi></mrow></msub>
           <mo>-</mo>
           <msub><mi>u</mi><mrow><mi>i</mi><mo>-</mo><mn>1</mn><mo>,</mo><mi>j</mi></mrow></msub>
         </mrow>
-        <mi>&#x0394;x</mi>
+        <mrow><mn>2</mn><mi>&#x0394;x</mi></mrow>
       </mfrac>
       <mo>,</mo>
       <mspace width="2em" />
@@ -450,16 +450,17 @@ are the spatial coordinates. The convection term is discretized using a first-or
       <mo>&#x2248;</mo>
       <mfrac>
         <mrow>
-          <msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi></mrow></msub>
+          <msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi><mo>+</mo><mn>1</mn></mrow></msub>
           <mo>-</mo>
           <msub><mi>u</mi><mrow><mi>i</mi><mo>,</mo><mi>j</mi><mo>-</mo><mn>1</mn></mrow></msub>
         </mrow>
-        <mi>&#x0394;y</mi>
+        <mrow><mn>2</mn><mi>&#x0394;y</mi></mrow>
       </mfrac>
       <mo>.</mo>
     </mrow>
   </math>
 </center>
+
 <br>
 A mesh sensitivity study is conducted a priori to verify that the chosen finite-difference mesh yields a resolution-independent reference solution.  
 The 
@@ -561,7 +562,7 @@ is a weighted sum,
       <mo>&#x00D7;</mo>
       <msub><mi>u</mi><mi>conv</mi></msub>
     </mrow>
-  </math>
+  </math>.
 </center>
 <br>
 This gating mechanism allows the network to adaptively emphasize either the convective or diffusive behavior depending on the region of the domain, thereby fusing the contributions of the two specialized branches.<br><br>
