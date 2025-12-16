@@ -15,3 +15,7 @@ This repository presents a reproducible study of architectural choices for PINNs
 - Finite-difference solver for reference data generation  
 - `Github_PINNs.ipynb` containing PINN architectures
 - `index.html` summarizing architectures, experiments, and results
+
+## Contact w/ Questions
+- Osahon Odiase: osahon@mit.edu
+- Brian Shi: brianshi@mit.edu
